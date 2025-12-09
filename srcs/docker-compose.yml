@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   nginx:
     build: requirements/nginx/.
@@ -30,6 +28,9 @@ services:
       - WP_ADMIN_USER=${WP_ADMIN_USER}
       - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
       - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
+      - WP_USER=${WP_USER}
+      - WP_USER_PASSWORD=${WP_USER_PASSWORD}
+      - WP_USER_EMAIL=${WP_USER_EMAIL}
     networks:
       inception:
     restart: always
