@@ -127,19 +127,19 @@ This project uses **Docker** to create isolated, reproducible containers for eac
                     │              Docker Network                 │
                     │                (inception)                  │
                     │                                             │
-  Port 443          │   ┌─────────┐  Port 9000  ┌──────────────┐ │
-WWW ◄───────────────┼───┤  nginx  ├─────────────┤  WordPress   │ │
-    HTTPS (TLS)     │   │   SSL   │   FastCGI   │   PHP-FPM    │ │
-                    │   └─────────┘             └──────┬───────┘ │
-                    │         │                        │         │
-                    │         │                        │ Port    │
-                    │         │ Volume:                │ 3306    │
-                    │         │ /var/www/html          │         │
-                    │         │                        ▼         │
-                    │         │                 ┌──────────────┐ │
-                    │         └─────────────────┤   MariaDB    │ │
-                    │                           │   Database   │ │
-                    │                           └──────────────┘ │
+  Port 443          │   ┌─────────┐  Port 9000  ┌──────────────┐  │
+WWW ◄───────────────┼───┤  nginx  ├─────────────┤  WordPress   │  │
+    HTTPS (TLS)     │   │   SSL   │   FastCGI   │   PHP-FPM    │  │
+                    │   └─────────┘             └──────┬───────┘  │
+                    │         │                        │          │
+                    │         │                        │ Port     │
+                    │         │ Volume:                │ 3306     │
+                    │         │ /var/www/html          │          │
+                    │         │                        ▼          │
+                    │         │                 ┌──────────────┐  │
+                    │         └─────────────────┤   MariaDB    │  │
+                    │                           │   Database   │  │
+                    │                           └──────────────┘  │
                     └─────────────────────────────────────────────┘
 ```
 
