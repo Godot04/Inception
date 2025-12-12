@@ -8,14 +8,14 @@ A Docker-based infrastructure project that deploys a complete WordPress website 
 
 ## Description
 
-**Inception** is a system administration project that introduces containerization using Docker and Docker Compose. The goal is to create a small infrastructure composed of different services running in isolated containers, following best practices for security and scalability.
+**Inception** is a system administration project that introduces containerization using Docker and Docker Compose. The goal is to create a small infrastructure composed of different services running in isolated containers.
 
 The project deploys:
 - **nginx** — Web server handling HTTPS traffic (TLSv1.2/TLSv1.3 only)
 - **WordPress + PHP-FPM** — Content management system with FastCGI process manager
 - **MariaDB** — Relational database storing WordPress data
 
-All services run on Debian Bookworm (penultimate stable version) and communicate over a dedicated Docker network.
+All services run on Debian Bookworm and communicate over a dedicated Docker network.
 
 ---
 
@@ -25,10 +25,7 @@ All services run on Debian Bookworm (penultimate stable version) and communicate
 
 - Docker and Docker Compose installed
 - Root/sudo access (for creating data directories)
-- Entry in `/etc/hosts` mapping your domain to `127.0.0.1`:
-  ```
-  127.0.0.1    opopov.42.fr
-  ```
+- Entry in `/etc/hosts` mapping your domain to `login.42.fr`:
 
 ### Configuration
 
@@ -77,8 +74,8 @@ make re      # Rebuild from scratch
 
 ### Access
 
-- **Website**: https://opopov.42.fr (or your configured domain)
-- **WordPress Admin Panel**: https://opopov.42.fr/wp-admin
+- **Website**: https://login.42.fr 
+- **WordPress Admin Panel**: https://login.42.fr/wp-admin
 
 ---
 
@@ -93,20 +90,12 @@ make re      # Rebuild from scratch
 - [WP-CLI Handbook](https://make.wordpress.org/cli/handbook/)
 - [Debian Bookworm Release Notes](https://www.debian.org/releases/bookworm/)
 
-### Tutorials
-- [Docker Get Started Guide](https://docs.docker.com/get-started/)
-- [nginx Beginner's Guide](https://nginx.org/en/docs/beginners_guide.html)
-- [PHP-FPM Configuration](https://www.php.net/manual/en/install.fpm.configuration.php)
-
 ### AI Usage
 
-AI assistants (GitHub Copilot) were used during development for:
+GitHub Copilot were used during development for:
 - **Code explanations**: Understanding Docker concepts, Dockerfile syntax, and nginx configuration
 - **Debugging**: Troubleshooting container communication and PHP-FPM configuration
-- **Documentation**: Assisting in writing clear and comprehensive documentation
-- **Best practices**: Guidance on security considerations and Docker design patterns
-
-All AI-generated suggestions were reviewed, tested, and adapted to fit the specific project requirements.
+- **Documentation**: Assisting in writing documentation
 
 ---
 
@@ -114,11 +103,13 @@ All AI-generated suggestions were reviewed, tested, and adapted to fit the speci
 
 ### Overview
 
-This project uses **Docker** to create isolated, reproducible containers for each service. Docker Compose orchestrates the multi-container application, defining:
-- Service configurations and dependencies
-- Network topology
-- Volume mounts for data persistence
-- Environment variable injection
+This project uses **Docker** to run three services (nginx, WordPress, MariaDB) in separate containers. Docker allows each service to run independently while sharing the same host system resources efficiently.
+
+**Why Docker?**
+- **Isolation**: Each service runs in its own container without interfering with others
+- **Lightweight**: Containers share the host kernel, using less resources than virtual machines
+- **Portability**: The same setup works on any system with Docker installed
+- **Easy management**: Docker Compose handles all services with simple commands
 
 ### Architecture
 
@@ -171,79 +162,71 @@ Inception/
 
 ### Design Choices
 
-1. **Base Image**: `debian:bookworm` — Uses the penultimate stable Debian release (not `:latest`) for reproducibility
-2. **No PID 1 Issues**: All services run in foreground mode (`nginx -g "daemon off;"`, `php-fpm8.2 -F`, `mysqld`)
-3. **Custom Network**: All containers communicate via the `inception` bridge network
-4. **TLS Only**: nginx accepts only TLSv1.2 and TLSv1.3 connections
-5. **Automated Setup**: WP-CLI handles WordPress installation without manual intervention
+- **Base Image**: Debian Bookworm (penultimate stable version)
+- **Foreground Mode**: All services run in foreground to work properly with Docker
+- **Custom Network**: Containers communicate through a dedicated `inception` network
+- **TLS Only**: nginx configured for HTTPS with TLSv1.2 and TLSv1.3
+- **Automated Setup**: WP-CLI installs WordPress automatically without manual steps
 
 ---
 
-## Comparisons
+## Technical Comparisons
 
 ### Virtual Machines vs Docker
 
-| Aspect | Virtual Machines | Docker Containers |
-|--------|-----------------|-------------------|
-| **Isolation** | Full OS isolation with hypervisor | Process-level isolation via namespaces/cgroups |
-| **Size** | Gigabytes (full OS + kernel) | Megabytes (shares host kernel) |
-| **Startup Time** | Minutes | Seconds |
-| **Resource Usage** | High (dedicated RAM/CPU per VM) | Low (shared kernel, no duplication) |
-| **Portability** | Hardware-dependent | Runs anywhere Docker is installed |
-| **Use Case** | Full OS environments, legacy apps | Microservices, CI/CD, development |
+**Virtual Machines:**
+- Size: Gigabytes per VM (includes full operating system)
+- Startup time: 1-2 minutes to boot
+- Resources: Each VM needs dedicated RAM and CPU
+- Use case: Running different operating systems 
 
-**Project Choice**: Docker provides lightweight, fast-starting containers perfect for deploying modular services like nginx, WordPress, and MariaDB.
+**Docker:**
+- Size: Megabytes per container (shares host kernel)
+- Startup time: Less than 10 seconds
+- Resources: All containers share host resources efficiently
+- Use case: Running multiple services on the same OS
 
 ---
 
 ### Secrets vs Environment Variables
 
-| Aspect | Environment Variables | Docker Secrets |
-|--------|----------------------|----------------|
-| **Storage** | Plain text in .env files | Encrypted at rest |
-| **Access** | Visible via `docker inspect` | Only inside container at `/run/secrets/` |
-| **Scope** | Any environment | Docker Swarm mode only |
-| **Security** | Less secure (visible in process list) | More secure (never stored in image layers) |
-| **Complexity** | Simple | Requires Swarm setup |
+**Environment Variables:**
+- Setup: Simple `.env` file with key-value pairs
+- Security: Plain text (must keep `.env` out of Git)
+- Complexity: Easy to use and understand
 
-**Project Choice**: Environment variables via `.env` file for simplicity in a single-host setup. The `.env` file is excluded from Git to prevent credential exposure.
+**Docker Secrets:**
+- Setup: Requires Docker Swarm mode
+- Security: Encrypted storage in Docker
+- Complexity: More complex configuration
 
 ---
 
 ### Docker Network vs Host Network
 
-| Aspect | Docker Bridge Network | Host Network |
-|--------|----------------------|--------------|
-| **Isolation** | Containers isolated from host | Containers share host's network stack |
-| **Port Mapping** | Requires explicit `-p` flag | Uses host ports directly |
-| **Inter-container** | DNS resolution by container name | Must use `localhost` |
-| **Security** | Better (containers separated) | Lower (no network isolation) |
-| **Performance** | Slight overhead | Native performance |
+**Docker Bridge Network:**
+- Container communication: By name (e.g., `mariadb:3306`, `wp-php:9000`)
+- Security: Containers isolated from host system
+- Port control: Only expose specific ports
 
-**Project Choice**: Custom bridge network (`inception`) provides:
-- Container name DNS resolution (e.g., `mariadb`, `wp-php`)
-- Network isolation from host
-- Controlled port exposure (only 443 published)
+**Host Network:**
+- Container communication: By `localhost` only
+- Security: Containers have direct access to host network
+- Port control: All container ports exposed to host
 
 ---
 
 ### Docker Volumes vs Bind Mounts
 
-| Aspect | Docker Volumes | Bind Mounts |
-|--------|---------------|-------------|
-| **Management** | Managed by Docker | Manual path on host |
-| **Location** | `/var/lib/docker/volumes/` | Any host path |
-| **Portability** | Easy backup/restore | Host-dependent |
-| **Performance** | Optimized for Docker | Direct filesystem access |
-| **Use Case** | Database data, named storage | Development, config files |
+**Docker Volumes:**
+- Location: Docker manages the location automatically
+- Backup: Requires Docker commands to access
+- Control: Docker decides where to store data
 
-**Project Choice**: **Bind mounts** to specific host paths (`/home/opopov42/data/`) for:
-- Easy data inspection and backup
-- Explicit control over storage location
-- Requirement compliance (data stored at `/home/login/data/`)
+**Bind Mounts:**
+- Location: You specify the exact path (`/home/login/data/`)
+- Backup: Direct folder access on the host
+- Control: You decide exactly where data is stored
 
 ---
 
-## License
-
-This project is part of the 42 School curriculum and is intended for educational purposes.
