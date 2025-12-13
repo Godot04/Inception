@@ -21,7 +21,7 @@ clean: down
 
 fclean: clean
 	docker volume rm $$(docker volume ls -q) 2>/dev/null || true
-	@rm -rf $(DATA_DIR)
+	@sudo rm -rf $(DATA_DIR)
 
 re: fclean build
 
